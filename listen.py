@@ -6,8 +6,8 @@ import time
 class listener():
     def __init__(self):
         self.duration = 5 #seconds
-        self.sr = 44100
-        self.bs = 512
+        self.sr = 44100 #sample rate in hertz
+        self.bs = 512 #chunk size
         self.stop_time = time.time()+5
         self.stream = sounddevice.Stream(samplerate=self.sr, blocksize= self.bs)
 
