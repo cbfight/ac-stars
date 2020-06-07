@@ -33,9 +33,10 @@ def plotter():
     global fig, ax, trace
     print('plotter method')
     fig, ax1=plt.subplots()
+    plt.grid()
     trace = ax1.plot(np.zeros((23,1)))
-    ax1.set_xlim(-22050,22050)
-    ax1.set_ylim(-2,2)
+    ax1.set_xlim(-22050,22050) #nyquist window in hz
+    ax1.set_ylim(-2,2) 
     animated = FuncAnimation(fig, animate_plot,blit=True)
     plt.show()
 
@@ -45,7 +46,7 @@ def animate_plot(frame):
         try:
             data = stack.get_nowait()
         except not_mp_q.Empty:
-            print('queue is empty!')
+            #print('queue is empty!')
             break
         for column,line in enumerate(trace):
             #line.set_ydata(data[:,0])
