@@ -6,7 +6,7 @@ from matplotlib.animation import FuncAnimation
 from multiprocessing import Process, Queue
 import queue as not_mp_q
 
-duration = 5000 #milliseconds
+duration = 60000 #milliseconds
 fig, ax, trace = 0,0,0 #initializing?
 
 def main():
@@ -32,8 +32,10 @@ def listen_handler(q):
 def plotter():
     global fig, ax, trace
     print('plotter method')
-    fig, ax = plt.subplots()
-    trace = ax.plot(np.zeros((512,1)))
+    fig, ax1=plt.subplots()
+    trace = ax1.plot(np.zeros((23,1)))
+    ax1.set_xlim(-22050,22050)
+    ax1.set_ylim(-2,2)
     animated = FuncAnimation(fig, animate_plot,blit=True)
     plt.show()
 
@@ -46,14 +48,15 @@ def animate_plot(frame):
             print('queue is empty!')
             break
         for column,line in enumerate(trace):
-            line.set_ydata(data[:,0])
-            print('shoulda updated plot now')
+            #line.set_ydata(data[:,0])
+            xdata,ydata = fft(data)
+            xdata = np.multiply(xdata,44100)
+            line.set_data(xdata,ydata)
     return trace
 
 def stream_callback(inframe, framecount, time, status):
     global stack
     stack.put(inframe)
-    #print(stack.qsize())
     
 def streaming_input():
     print('streaming input method')
@@ -65,6 +68,12 @@ def streaming_input():
                               callback=stream_callback)
     with sound_in:
        sd.sleep(duration) #5 seconds duration
+
+def fft(data):
+    waveform = data.tolist()
+    amplitude = np.fft.fft2(waveform)
+    frequency = np.fft.fftfreq(len(waveform))
+    return frequency,amplitude
 
 if __name__ == '__main__':
     main()
