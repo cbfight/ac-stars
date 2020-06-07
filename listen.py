@@ -1,4 +1,3 @@
-import sounddevice as sd
 from matplotlib import pyplot as plt
 import numpy as np
 import time
@@ -7,7 +6,6 @@ from multiprocessing import Process, Queue
 import queue as not_mp_q
 
 duration = 60000 #milliseconds
-fig, ax, trace = 0,0,0 #initializing?
 
 def main():
     print('main method')
@@ -20,31 +18,25 @@ def main():
     z.join()
 
 def plot_handler(q):
-    global stack
-    stack = q
-    plotter()
+    plotter(q)
 
 def listen_handler(q):
-    global stack
-    stack = q
-    streaming_input()
+    streaming_input(q)
 
-def plotter():
-    global fig, ax, trace
+def plotter(queue):
     print('plotter method')
     fig, ax1=plt.subplots()
     plt.grid()
     trace = ax1.plot(np.zeros((23,1)))
     ax1.set_xlim(-22050,22050) #nyquist window in hz
     ax1.set_ylim(-2,2) 
-    animated = FuncAnimation(fig, animate_plot,blit=True)
+    animated = FuncAnimation(fig, lambda frame: animate_plot(frame, queue, trace), blit=True)
     plt.show()
 
-def animate_plot(frame):
-    global stack
+def animate_plot(frame, queue, trace):
     while True:
         try:
-            data = stack.get_nowait()
+            data = queue.get_nowait()
         except not_mp_q.Empty:
             #print('queue is empty!')
             break
@@ -54,19 +46,16 @@ def animate_plot(frame):
             xdata = np.multiply(xdata,44100)
             line.set_data(xdata,ydata)
     return trace
-
-def stream_callback(inframe, framecount, time, status):
-    global stack
-    stack.put(inframe)
     
-def streaming_input():
+def streaming_input(queue):
     print('streaming input method')
+    import sounddevice as sd
     sound_in = sd.InputStream(samplerate=44100,
                               blocksize=512,
                               device=0,
                               channels=1,
                               dtype=np.float32,
-                              callback=stream_callback)
+                              callback=lambda inframe, framecount, time, status: queue.put(inframe))
     with sound_in:
        sd.sleep(duration) #5 seconds duration
 
